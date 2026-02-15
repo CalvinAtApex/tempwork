@@ -2,3 +2,4 @@ Flask[async]
 aiohttp
 gunicorn
 requests
+Authlib

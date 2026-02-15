@@ -3,11 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Hockey Stats</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    rel="stylesheet">
-
-  <!-- ─── INLINE SPINNER CSS ─────────────────────────────────────────────────── -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     .loader {
       border: 6px solid rgba(0,0,0,0.1);
@@ -20,40 +16,33 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
-  <!-- ────────────────────────────────────────────────────────────────────────── -->
 </head>
 <body>
   <div class="container py-4">
-
+    {% if user %}
+      <div class="mb-3 text-end">
+        <img src="{{ user.avatar_url }}" width="30" class="rounded-circle me-1">
+        <span>{{ user.name }}</span>
+        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-secondary ms-2">Logout</a>
+      </div>
+    {% else %}
+      <div class="mb-3 text-end">
+        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-primary">Login with GitHub</a>
+      </div>
+    {% endif %}
     <nav id="divisions-nav" class="mb-4"></nav>
-
-    <!-- team logo -->
     <div id="team-logo" class="text-center mb-3"></div>
-
-    <!-- loading spinner (hidden until roster loads) -->
     <div id="loading-spinner" class="loader" style="display: none;"></div>
-
     <table class="table table-striped">
       <thead>
         <tr>
-          <th>#</th>
-          <th>Name</th>
-          <th>Pos</th>
-          <th>GP</th>
-          <th>G</th>
-          <th>A</th>
-          <th>P</th>
-          <th>Playoff G</th>
-          <th>Playoff A</th>
-          <th>Playoff P</th>
+          <th>#</th><th>Name</th><th>Pos</th><th>GP</th><th>G</th><th>A</th><th>P</th><th>Playoff G</th><th>Playoff A</th><th>Playoff P</th>
         </tr>
       </thead>
       <tbody id="stats-body"></tbody>
     </table>
   </div>
-
   <script>
-    // load divisions and teams into a simple nav
     fetch('/teams')
       .then(r=>r.json())
       .then(divs=>{
@@ -62,13 +51,9 @@
           const btn = document.createElement('div');
           btn.className = 'btn-group me-2';
           btn.innerHTML = `
-            <button type="button" class="btn btn-outline-primary dropdown-toggle" 
-                    data-bs-toggle="dropdown">${div}</button>
+            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">${div}</button>
             <ul class="dropdown-menu">
-              ${teams.map(t=>`<li><a class="dropdown-item" href="#" 
-                   onclick="loadRoster('${t.abbrev}')">
-                   <img src="${t.logo}" width="20" class="me-1">${t.name}
-                   </a></li>`).join('')}
+              ${teams.map(t=>`<li><a class="dropdown-item" href="#" onclick="loadRoster('${t.abbrev}')"><img src="${t.logo}" width="20" class="me-1">${t.name}</a></li>`).join('')}
             </ul>`;
           nav.appendChild(btn);
         }
@@ -78,48 +63,29 @@
       const spinner = document.getElementById('loading-spinner');
       const logoDiv = document.getElementById('team-logo');
       const body    = document.getElementById('stats-body');
-
-      // show spinner & clear old content
       spinner.style.display = 'block';
-      logoDiv.innerHTML     = '';
-      body.innerHTML        = '';
-
+      logoDiv.innerHTML = '';
+      body.innerHTML = '';
       fetch(`/roster/${abbrev}`)
         .then(r=>r.json())
         .then(data=>{
-          // hide spinner
           spinner.style.display = 'none';
-
-          // show team logo
-          logoDiv.innerHTML =
-            `<img src="${data.logo}" class="img-fluid" style="max-height:120px;">`;
-
-          // fill table
-          data.players.forEach((p,i)=>{
+          logoDiv.innerHTML = `<img src="${data.logo}" class="img-fluid" style="max-height:120px;">`;
+          data.players.forEach(p=>{
             const tr = document.createElement('tr');
             tr.innerHTML = `
-              <td>${p.number}</td>
-              <td>${p.name}</td>
-              <td>${p.position}</td>
-              <td>${p.gamesPlayed}</td>
-              <td>${p.goals}</td>
-              <td>${p.assists}</td>
-              <td>${p.points}</td>
-              <td>${p.playoffGoals}</td>
-              <td>${p.playoffAssists}</td>
+              <td>${p.number}</td><td>${p.name}</td><td>${p.position}</td>
+              <td>${p.gamesPlayed}</td><td>${p.goals}</td><td>${p.assists}</td>
+              <td>${p.points}</td><td>${p.playoffGoals}</td><td>${p.playoffAssists}</td>
               <td>${p.playoffPoints}</td>`;
             body.appendChild(tr);
           });
-        })
-        .catch(err=>{
-          // hide spinner on error
+        }).catch(err=>{
           spinner.style.display = 'none';
           console.error(err);
         });
     }
   </script>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

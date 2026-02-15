@@ -1,8 +1,28 @@
-from flask import Flask, render_template, jsonify
+import os
+from flask import Flask, render_template, jsonify, redirect, url_for, session, Response
+from authlib.integrations.flask_client import OAuth
 from flask import Response
 import requests
 
 app = Flask(__name__)
+
+# ─── SECURITY / OAUTH CONFIG ─────────────────────────────────────────────────
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret')  # override via env
+
+# initialize Authlib
+oauth = OAuth(app)
+github = oauth.register(
+    name='github',
+    client_id=os.environ['GITHUB_CLIENT_ID'],
+    client_secret=os.environ['GITHUB_CLIENT_SECRET'],
+    access_token_url='https://github.com/login/oauth/access_token',
+    authorize_url='https://github.com/login/oauth/authorize',
+    api_base_url='https://api.github.com/',
+    client_kwargs={'scope': 'user:email'},
+)
+
 
 @app.route('/')
 def index():
@@ -67,6 +87,24 @@ def roster(team_abbrev):
                  if t['teamAbbrev']['default'] == team_abbrev), '')
 
     return jsonify({ 'logo': logo, 'players': players })
+
+@app.route('/login')
+def login():
+    redirect_uri = url_for('authorize', _external=True)
+    return github.authorize_redirect(redirect_uri)
+
+@app.route('/authorize')
+def authorize():
+    token = github.authorize_access_token()
+    resp  = github.get('user')
+    profile = resp.json()
+    session['user'] = {
+        'id': profile['id'],
+        'name': profile['login'],
+        'avatar_url': profile.get('avatar_url')
+    }
+    return redirect(url_for('index'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
